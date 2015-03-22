@@ -1,0 +1,124 @@
+<html>
+<head>
+  <link rel="stylesheet" href="bootstrap.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="link">
+  You're likely looking at the fastest possible<br>
+  implementation of <a href="https://dbmonster.firebaseapp.com/">DBMonster</a> :-)<br>
+  <a class="center" href="https://github.com/joelrich/fastest-dbmonster">See it on GitHub</a>
+</div>
+
+<div id="body">
+    <dbm-table tl-root>
+    </dbm-table>
+</div>
+
+<script src="tl.js"></script>
+<script src="data.js"></script>
+<script>
+    var data = {Database: Database};
+    var I = 0;
+    var N = 100;
+
+    var dbs = [];
+    for (var i = 0; i < N; i++) {
+        dbs.push(new data.Database('cluster' + i));
+        dbs.push(new data.Database('cluster' + i + 'slave'));
+    }
+
+    // Utilities copied and adjusted from https://github.com/trueadm/dbmonster
+
+    function getCountClassName(db) {
+        var count = db.queries.length;
+        var className = 'label';
+        if (count >= 20) {
+            className += ' label-important';
+        }
+        else if (count >= 10) {
+            className += ' label-warning';
+        }
+        else {
+            className += ' label-success';
+        }
+        return className;
+    }
+
+    function elapsedClassName(elapsed) {
+        var className = 'Query elapsed';
+        if (elapsed >= 10.0) {
+            className += ' warn_long';
+        }
+        else if (elapsed >= 1.0) {
+            className += ' warn';
+        }
+        else {
+            className += ' short';
+        }
+        return className;
+    }
+
+    function formatElapsed(value) {
+        if (!value) return '';
+        var str = parseFloat(value).toFixed(2);
+        if (value > 60) {
+            var minutes = Math.floor(value / 60);
+            var comps = (value % 60).toFixed(2).split('.');
+            var seconds = comps[0].lpad('0', 2);
+            var ms = comps[1];
+            str = minutes + ":" + seconds + "." + ms;
+        }
+        return str;
+    }
+
+</script>
+
+<tl-element name="dbm-query" tag="td" attrs="query">
+    <span class="foo">${formatElapsed(query.elapsed)}</span>
+    <div class="popover left">
+        <div class="popover-content">${query.query}</div>
+        <div class="arrow"></div>
+    </div>
+</tl-element>
+
+<tl-element name="dbm-database" tag="tr" attrs="db">
+    <ht-td class="dbname">
+        ${db.name}
+    </ht-td>
+
+    <ht-td class="query-count">
+      <span class="${ getCountClassName(db) }">
+        ${db.queries.length}
+      </span>
+    </ht-td>
+
+    <tl-for $="query of db.getTopFiveQueries()">
+        <dbm-query query="${query}" class="${elapsedClassName(query.elapsed)}"></dbm-query>
+    </tl-for>
+</tl-element>
+
+<tl-element name="dbm-table">
+    <ht-table class="table table-striped latest-data">
+        <ht-tbody>
+            <tl-for $="db of dbs">
+                <dbm-database db="${db}"></dbm-database>
+            </tl-for>
+        </ht-tbody>
+    </ht-table>
+</tl-element>
+
+<script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-61057913-1', 'auto');
+    ga('send', 'pageview');
+
+</script>
+
+</body>
+</html>
